@@ -8,7 +8,7 @@ Clone [react-demo-km-audit](https://github.com/k-ai-Documentation/react-demo-km-
 
 Open terminal and run
 ```
-cd react-demo-search
+cd react-demo-skm-audit
 ```
 Add fill your keys in .env.development file.
 
