@@ -4,19 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c6a28823-8fec-4d62-a1df-dca2c77fa946" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/.env.development" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/components/DocumentCard.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/components/DocumentList.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/components/MissingSubjectCard.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/favicon.ico" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/pages/KMAuditPage.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/styles/DocumentCard.module.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/styles/DocumentList.module.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/styles/Home.module.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/styles/KMAudit.module.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/styles/MissingSubject.module.scss" afterDir="false" />
-    </list>
+    <list default="true" id="c6a28823-8fec-4d62-a1df-dca2c77fa946" name="更改" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -126,7 +114,7 @@
       <workItem from="1713512905881" duration="5518000" />
       <workItem from="1714021642665" duration="685000" />
       <workItem from="1714022661021" duration="23479000" />
-      <workItem from="1714095790289" duration="19366000" />
+      <workItem from="1714095790289" duration="19676000" />
     </task>
     <servers />
   </component>
