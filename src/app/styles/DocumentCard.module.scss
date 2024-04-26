@@ -1,0 +1,47 @@
+.document-card {
+  border-radius: 10px;
+  border: 2px solid var(--color-border);
+  margin-bottom: 20px;
+  width: 800px;
+  padding: 20px;
+
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+
+  .information {
+    margin-bottom: 15px;
+
+    .name, .involved-information {
+      margin-bottom: 5px;
+    }
+
+    .name {
+      cursor: pointer;
+
+      &:hover {
+        color: var(--primary-color)
+      }
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .state {
+    margin-left: 5px
+  }
+
+  .bottom {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .detail {
+    line-height: 1.3;
+  }
+}

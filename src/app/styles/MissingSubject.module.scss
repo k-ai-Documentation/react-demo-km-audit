@@ -1,0 +1,28 @@
+.missing-subject {
+  border-radius: 10px;
+  border: 2px solid var(--color-border);
+  margin-bottom: 20px;
+  width: 800px;
+  padding: 20px;
+
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+
+  .information {
+    margin-bottom: 15px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .questions {
+    .question {
+      margin-bottom: 3px;
+    }
+  }
+}

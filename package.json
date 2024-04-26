@@ -1,0 +1,31 @@
+{
+  "name": "react-demo-km-audit",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.2",
+    "pug": "^2.0.4",
+    "pug-loader": "^2.4.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-redux": "^9.1.1",
+    "redux": "^5.0.1",
+    "sdk-js": "git@github.com:k-ai-Documentation/sdk-js.git",
+    "kai-asset": "git@github.com:k-ai-Documentation/kai-assets.git"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.2",
+    "sass": "^1.75.0",
+    "typescript": "^5"
+  }
+}
