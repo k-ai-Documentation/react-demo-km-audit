@@ -16,7 +16,7 @@
     "react-dom": "^18",
     "react-redux": "^9.1.1",
     "redux": "^5.0.1",
-    "sdk-js": "git@github.com:k-ai-Documentation/sdk-js.git",
+    "sdk-js": "github:k-ai-Documentation/sdk-js#version2.0",
     "kai-asset": "git@github.com:k-ai-Documentation/kai-assets.git"
   },
   "devDependencies": {

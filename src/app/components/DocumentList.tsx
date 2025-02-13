@@ -17,7 +17,7 @@ export function DocumentList({credentials, documents}) {
                 }
 
             } else if (credentials && credentials.organizationId && credentials.instanceId) {
-                baseUrl = `https://${credentials.organizationId}.kai-studio.ai/${credentials.instanceId}`
+                baseUrl = `https://api.kai-studio.ai`
                 headers = {
                     'organization-id': credentials.organizationId,
                     'instance-id': credentials.instanceId,
@@ -31,8 +31,11 @@ export function DocumentList({credentials, documents}) {
 
             const result = await axios({
                 url: `${baseUrl}` + file.url,
-                method: 'GET',
-                headers: headers
+                method: 'POST',
+                headers: headers,
+                data: {
+                    id: file.id
+                }
             })
 
             if (result && result.data) {
@@ -60,12 +63,24 @@ export function DocumentList({credentials, documents}) {
                     <th className={"text-white text-regular-14"}>
                         Name
                     </th>
+                    <th className={"text-white text-regular-14"}>
+                        Conflicts number
+                    </th>
+                    <th className={"text-white text-regular-14"}>
+                        Duplicates number
+                    </th>
                 </tr>
                 </thead>
                 <tbody>{documents.map((document: any) => {
                     return <tr key={document.id}>
                         <td width="576" className={styles['name-td']}>
                             <p className={" text-white text-regular-14"} onClick={() => goTo(document)}>{document.name}</p>
+                        </td>
+                        <td width="300">
+                            <p className={" text-white text-regular-14"}>{document.count_conflicts}</p>
+                        </td>
+                        <td width="300">
+                            <p className={" text-white text-regular-14"}>{document.count_duplicates}</p>
                         </td>
                     </tr>;
                 })}
