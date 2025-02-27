@@ -1,156 +1,145 @@
-import styles from "./../styles/DocumentCard.module.scss"
-import {KaiStudio} from "sdk-js";
-import axios from 'axios'
-import {useState} from "react";
+import { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
+import styles from '../styles/DocumentCard.module.scss';
+import DropdownSelect from './DropdownSelect';
+import { KaiStudio } from 'sdk-js';
+import Image from 'next/image';
+import share from 'kai-asset/share.svg'
 
-export function DocumentCard({file, credentials, type}) {
+interface DocumentCardProps {
+    document: any;
+    type: string;
+    credentials: any;
+}
 
-    let sdk: any = null
-    const organizationId = process.env.NEXT_PUBLIC_APP_ORGANIZATION_ID ?? (credentials.organizationId ?? "")
-    const instanceId = process.env.NEXT_PUBLIC_APP_INSTANCE_ID ?? (credentials.instanceId ?? "")
-    const apiKey = process.env.NEXT_PUBLIC_APP_API_KEY ?? (credentials.apiKey ?? "")
-    const host = process.env.NEXT_PUBLIC_HOST_URL
-    const [state, setState] = useState(file.state)
+const DocumentCard: React.FC<DocumentCardProps> = ({ document, type, credentials }) => {
+    const [informationMerge, setInformationMerge] = useState<any[]>([]);
+    const [status, setStatus] = useState<string>(document.state);
+    const stateList = ['DETECTED', 'MANAGED', 'IGNORED'];
 
-    credentials = {
-        organizationId: organizationId ?? '',
-        instanceId: instanceId ?? '',
-        apiKey: apiKey ?? '',
-        host: host ?? ''
-    }
+    const sdk =
+        credentials.organizationId && credentials.instanceId && credentials.apiKey
+            ? new KaiStudio({
+                  organizationId: credentials.organizationId,
+                  instanceId: credentials.instanceId,
+                  apiKey: credentials.apiKey,
+              })
+            : new KaiStudio({
+                  host: credentials.host,
+                  apiKey: credentials.apiKey,
+              });
 
-    if (organizationId && instanceId && apiKey) {
-        sdk = new KaiStudio({
-            organizationId: organizationId,
-            instanceId: instanceId,
-            apiKey: apiKey
-        })
-    } else if (host) {
-        sdk = new KaiStudio({
-            host: host,
-            apiKey: apiKey
-        })
-    }
+    const kmAudit = sdk?.auditInstance();
 
-    async function goTo(file: any) {
-        if (file.url && file.url.indexOf("/api/orchestrator/files/download") != -1) {
+    useEffect(() => {
+        fetchMergeInformation();
+    }, []);
 
-            let hostUrl = process.env.VITE_HOST_URL
-            let baseUrl = ""
-            let headers = {}
+    const fetchMergeInformation = async () => {
+        const { docsRef, documents } = document;
+        const toReturn: any[] = [];
 
-            if (hostUrl) {
-                baseUrl = process.env.VITE_HOST_URL ?? ""
-                headers = {
-                    'Content-Type': 'application/json',
-                }
-
-            } else if (credentials && credentials.organizationId && credentials.instanceId) {
-                baseUrl = `https://${credentials.organizationId}.kai-studio.ai/${credentials.instanceId}`
-                headers = {
-                    'organization-id': credentials.organizationId,
-                    'instance-id': credentials.instanceId,
-                    'api-key': credentials.apiKey
-                }
+        if (docsRef && documents) {
+            docsRef.forEach((docRef: any) => {
+                documents.forEach((doc: any) => {
+                    if (docRef.id === doc.docId) {
+                        toReturn.push({ ...docRef, information_involved: doc.information_involved });
+                    }
+                });
+            });
+        } else if (documents) {
+            const searchInstance = sdk?.search();
+            for (const doc of documents) {
+                const docInfo = await searchInstance.getDocSignature(doc.docId);
+                toReturn.push({
+                    name: docInfo?.name ? docInfo.name : doc.docId,
+                    url: docInfo?.url ? docInfo.url : "",
+                    information_involved: doc.information_involved,
+                });
             }
+        }
+        setInformationMerge(toReturn);
+    };
 
-            if (!baseUrl) {
-                return
-            }
+    const handleStatusChange = async (newState: string) => {
+        if (status === 'MANAGED' || document.state === 'MANAGED') return;
+        setStatus(newState);
+        switch (type) {
+            case 'conflict':
+                await kmAudit.conflictInformationSetState(document.id, newState.toLowerCase());
+                break;
+            case 'duplicate':
+                await kmAudit.duplicatedInformationSetState(document.id, newState.toLowerCase());
+                break;
+        }
+        document.state = newState;
+    };
 
-            const result = await axios({
-                url: `${baseUrl}` + file.url,
-                method: 'GET',
-                headers: headers
-            })
+    const goTo = async (file: any) => {
+        if (file.url.includes('/api/orchestrator/files/download')) {
+            let baseUrl = credentials.host || `https://${credentials.organizationId}.kai-studio.ai/${credentials.instanceId}`;
+            let headers = baseUrl.includes('kai-studio')
+                ? {
+                      'organization-id': credentials.organizationId,
+                      'instance-id': credentials.instanceId,
+                      'api-key': credentials.apiKey,
+                  }
+                : { 'Content-Type': 'application/json' };
 
-            if (result && result.data) {
-                const buffer = Buffer.from(result.data.response);
-                const blob = new Blob([buffer]);
+            const result = await axios.post(`${baseUrl}${file.url}`, {}, { headers });
+            if (result.data) {
+                const blob = new Blob([new Uint8Array(result.data.response)]);
                 const url = window.URL.createObjectURL(blob);
-                let a = document.createElement("a");
+                const a = document.createElement('a');
                 document.body.appendChild(a);
-                a.setAttribute('style', "display: none")
+                a.style.display = 'none';
                 a.href = url;
                 a.download = file.name;
                 a.click();
                 window.URL.revokeObjectURL(url);
             }
         } else {
-            window.open(file.url, '_blank')
+            window.open(file.url, '_blank');
         }
-    }
+    };
 
-    async function setManaged() {
-        switch (type) {
-            case "conflict":
-                await setConflictManaged(file.id)
-                break
-            case "duplicate":
-                await setDuplicateManaged(file.id)
-                break
-        }
-    }
-
-    async function setDuplicateManaged(documentId: number) {
-        if (!sdk) {
-            return
-        }
-        let result = await sdk?.auditInstance().setDuplicatedInformationManaged(documentId)
-        setState("MANAGED")
-    }
-
-    async function setConflictManaged(documentId: number) {
-        if (!sdk) {
-            return
-        }
-        let result = await sdk?.auditInstance().setConflictManaged(documentId)
-        setState("MANAGED")
-    }
-
-
-    function informationMerge(file: any) {
-        const docsRef = file.docsRef
-        const documents = file.documents
-        let toReturn: any = []
-        if (docsRef && documents) {
-            docsRef.forEach((docRef: any) => {
-                documents.forEach((doc: any) => {
-                    if (docRef.id == doc.docId) {
-                        let matchedResult = {
-                            ...docRef, information_involved: doc.information_involved
-                        }
-                        toReturn.push(matchedResult)
-                    }
-                })
-            })
-        }
-        return toReturn
-    }
+    const downloadAll = () => {
+        informationMerge.forEach(async (el) => {
+            await goTo(el);
+        });
+    };
 
     return (
-        <div className={styles['document-card']} key={file.subject + '_' + file.status}>
-            <div className={styles.top}>
-                <p className={"text-white text-bold-14"}>Subject: {file.subject}</p>
-                <p className={"text-white"}>
-                    <span className={"text-regular-14"}>State:</span>
-                    <span className={"text-bold-14 state"}>{file.state}</span>
-                </p>
+        <div className={styles['document-card']}>
+            <div className={styles['top']}>
+                <p className="text-white text-medium-14">Subject: {document.subject}</p>
+                <div className={styles['toggle-block']}>
+                    {status === 'MANAGED' || status === 'IGNORED' ? (
+                        <p className="text-white text-medium-14">{status}</p>
+                    ) : (
+                        <DropdownSelect selected={status} options={stateList} onChange={handleStatusChange} />
+                    )}
+                </div>
             </div>
-            {informationMerge(file).map((element: any, index: number) => {
-                return <div className={styles.information} key={element.name  + '_' + index}>
-                    <p className={"text-bold-14 text-white " + styles.name}
-                       onClick={() => goTo(element)}>{element.name}</p>
-                    <p className={"text-bold-14 text-grey " + styles['involved-information']}>Involved
-                        information:</p>
-                    <p className={"text-regular-14 text-white " + styles.detail}>{element.information_involved}</p>
+            <div className={styles['information']}>
+                {informationMerge.map((element, index) => (
+                    <div key={index} className={styles['information']}>
+                        <p className={`text-white text-bold-14 ${styles["name"]}`} onClick={() => goTo(element)}>
+                            {element?.name ? element.name : ""}
+                        </p>
+                        <p className={`text-grey text-regular-14 ${styles["involved-information"]}`}>Involved information:</p>
+                        <p className={`text-white text-regular-14 ${styles["detail"]}`}>{element.information_involved}</p>
+                    </div>
+                ))}
+            </div>
+            <div className={styles['open-all']}>
+                <div className={styles['action']} onClick={downloadAll}>
+                    <p className='text-regular-14 text-white'>Open all documents</p>
+                    <Image src={share} alt="Open all this documents" className='icon-18' width={18} height={18} />
                 </div>
-            })}
-            {
-                state != 'MANAGED' && <div className={styles['bottom']}>
-                    <button className={'btn-icon-text'} onClick={() => setManaged()}>Set managed</button>
-                </div>
-            }
+            </div>
         </div>
     );
-}
+};
+
+export default DocumentCard;

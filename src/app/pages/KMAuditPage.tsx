@@ -2,7 +2,7 @@ import styles from "@/app/styles/KMAudit.module.scss";
 import {useEffect, useRef, useState} from "react";
 import {DocumentList} from "@/app/components/DocumentList";
 import {KaiStudio} from "sdk-js";
-import {DocumentCard} from "../components/DocumentCard";
+import DocumentCard from "../components/DocumentCard";
 import {MissingSubjectCard} from "@/app/components/MissingSubjectCard";
 
 export interface DocumentToManage {
@@ -230,7 +230,7 @@ export default function KMAuditPage(credentials: any) {
                     <p className={"text-white text-bold-20 " + styles['sub-title']}>{menu == 'conflict' ? "Conflict information" : "Duplicate information"}</p>
                     <div>
                         {documentToShow.map((file: any, index: number) => {
-                            return <DocumentCard file={file} credentials={credentials} type={menu}
+                            return <DocumentCard document={file} credentials={credentials} type={menu}
                                                  key={file.subject + '_' + file.status + '_' + index}></DocumentCard>
                         })}
                     </div>
