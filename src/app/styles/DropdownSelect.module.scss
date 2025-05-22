@@ -2,6 +2,7 @@
 .dropdown-select {
     position: relative;
     z-index: 2000;
+    width: 150px;
   
     .trigger {
       display: flex;
@@ -43,7 +44,7 @@
         width: 140px;
       }
       .select-box {
-        width: 178px;
+        width: 104px;
         padding-left: 14px;
         margin-bottom: 7px;
         p {
@@ -53,9 +54,6 @@
         }
         &:first-child {
             margin-top: 7px;
-        }
-        &:last-child {
-            margin-bottom: 7px;
         }
     }
   

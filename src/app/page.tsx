@@ -1,14 +1,11 @@
-'use client'
-import styles from "./styles/KMAudit.module.scss"
-import KMAuditPage from "./pages/KMAuditPage"
+'use client';
+import KMAuditPage from '@/app/components/KMAuditPage';
 
 export default function Home() {
-    return (
-        <div className={styles['app-demo']}>
-            <div className={'header text-regular-32'}>
-                <p className={"text-white"}>KM Audit Demo</p>
-            </div>
-            <KMAuditPage></KMAuditPage>
-        </div>
-    );
+  return (
+    <div className="app">
+      <div className="header">KM Audit Demo</div>
+      <KMAuditPage />
+    </div>
+  );
 }

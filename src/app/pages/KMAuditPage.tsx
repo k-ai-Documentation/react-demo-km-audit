@@ -1,9 +1,10 @@
 import styles from "@/app/styles/KMAudit.module.scss";
 import {useEffect, useRef, useState} from "react";
-import {DocumentList} from "@/app/components/DocumentList";
-import {KaiStudio} from "sdk-js";
+import DocumentList from "@/app/components/DocumentList";
+import {KaiStudio} from "kaistudio-sdk-js";
 import DocumentCard from "../components/DocumentCard";
-import {MissingSubjectCard} from "@/app/components/MissingSubjectCard";
+import MissingSubjectCard from "@/app/components/MissingSubjectCard";
+import { useAnomalyStore } from "@/store/anomalyStore";
 
 export interface DocumentToManage {
     id: string,
@@ -16,18 +17,11 @@ export default function KMAuditPage(credentials: any) {
     const [selectedType, setSelectedType] = useState("All")
     const oldMenu = useRef("")
     const [loaded, setLoaded] = useState(false)
-    const [documentToManageList, setDocumentToManageList] = useState<DocumentToManage[]>([])
-    const [conflictInformationList, setConflictInformationList] = useState<any[]>([])
-    const [duplicatedInformationList, setDuplicatedInformationList] = useState<any[]>([])
-    const [missingSubjects, setMissingSubjects] = useState<any[]>([])
     const [relatedDocumentList, setRelatedDocumentList] = useState<any[]>([])
     const [documentToShow, setDocumentToShow] = useState<any[]>([])
     const typeList = useRef(["All", "Managed", "Detected"])
 
-    let documentToManageTmp: DocumentToManage[] = []
-    let conflictInformationListTmp: any[] = []
-    let duplicatedInformationListTmp: any[] = []
-    let missingSubjectsTmp: any[] = []
+    const {getConflictInformation, getDocumentsToManageList , getMissingSubjectList, getDuplicatedInformation, duplicatedInformationList, conflictInformationList, missingSubjects} = useAnomalyStore()
 
     useEffect(() => {
         if (oldMenu.current != menu) {
@@ -37,27 +31,27 @@ export default function KMAuditPage(credentials: any) {
                 let data
                 switch (menu) {
                     case "toManage":
-                        data = await getDocumentsToManageList(20, 0)
+                        data = await getDocumentsToManageList()
                         break
                     case "conflict":
-                        data = await getConflictInformation(20, 0)
+                        data = await getConflictInformation('')
                         break
                     case "duplicate":
-                        data = await getDuplicateInformation(20, 0)
+                        data = await getDuplicatedInformation('')
                         break
                     case "subject":
-                        data = await getMissingSubjectList(20, 0)
+                        data = await getMissingSubjectList()
                 }
             }
             fetchData()
             oldMenu.current = menu
             setLoaded(true)
         }
-    }, [menu]);
+    }, [menu, getConflictInformation, getDocumentsToManageList, getMissingSubjectList, getDuplicatedInformation]);
 
     useEffect(() => {
         setRelatedDocumentList(menu == 'conflict' ? conflictInformationList : duplicatedInformationList)
-    }, [menu, conflictInformationList.length, duplicatedInformationList.length])
+    }, [menu, conflictInformationList.length, duplicatedInformationList.length, conflictInformationList, duplicatedInformationList])
 
     useEffect(() => {
         if (selectedType == 'All') {
@@ -97,114 +91,6 @@ export default function KMAuditPage(credentials: any) {
         })
     }
 
-    const getDocumentsToManageList = async (limit: number, initialOffset: number) => {
-        if (!sdk) {
-            return
-        }
-
-        if (initialOffset == 0) {
-            documentToManageTmp = []
-        }
-
-        let offset = initialOffset
-        sdk?.auditInstance().getDocumentsToManageList(20, offset).then(async (result: any[]) => {
-            result.forEach(el => {
-                documentToManageTmp.push(el)
-            })
-
-            if (result && result.length == limit) {
-                offset = offset + limit
-                await getDocumentsToManageList(20, offset)
-            } else {
-                setDocumentToManageList(documentToManageTmp)
-            }
-        })
-    }
-
-    async function getConflictInformation(limit: number, initialOffset: number) {
-        if (!sdk) {
-            return
-        }
-
-        if (initialOffset == 0) {
-            conflictInformationListTmp = []
-        }
-
-        let offset = initialOffset
-        let result = await sdk?.auditInstance().getConflictInformation(20, offset)
-        if (result) {
-            for (let index = 0; index < result.length; index++) {
-                let document = result[index]
-                if (document && document.docsRef && document.docsRef.length) {
-                    conflictInformationListTmp.push(document)
-                }
-            }
-        }
-        if (result && result.length == limit) {
-            offset = offset + limit
-            await getConflictInformation(20, offset)
-        } else {
-            setConflictInformationList(conflictInformationListTmp)
-        }
-    }
-
-    async function getDuplicateInformation(limit: number, initialOffset: number) {
-        if (!sdk) {
-            return
-        }
-
-        if (initialOffset == 0) {
-            duplicatedInformationListTmp = []
-        }
-
-        let offset = initialOffset
-        let result = await sdk?.auditInstance().getDuplicatedInformation(20, offset)
-        if (result) {
-            for (let index = 0; index < result.length; index++) {
-                let document = result[index]
-                if (document && document.docsRef && document.docsRef.length) {
-                    duplicatedInformationListTmp.push(document)
-                }
-            }
-        }
-        if (result && result.length == limit) {
-            offset = offset + limit
-            await getDuplicateInformation(20, offset)
-        } else {
-            setDuplicatedInformationList(duplicatedInformationListTmp)
-        }
-    }
-
-    async function getMissingSubjectList(limit: number, initialOffset: number) {
-        if (!sdk) {
-            return
-        }
-
-        if (initialOffset == 0) {
-            missingSubjectsTmp = []
-        }
-
-        let offset = initialOffset
-        await sdk?.auditInstance().getMissingSubjectList(20, offset).then(async (result: any[]) => {
-            if (result) {
-                result.forEach(document => {
-                    if (document) {
-                        missingSubjectsTmp.push(document)
-                    }
-                })
-
-            }
-
-            if (result && result.length == limit) {
-                offset = offset + limit
-                await getMissingSubjectList(20, offset)
-            } else {
-                setMissingSubjects(missingSubjectsTmp)
-            }
-        })
-    }
-
-
     const setTab = (tab: string) => {
         setMenu(tab)
     }
@@ -223,14 +109,14 @@ export default function KMAuditPage(credentials: any) {
             </div>
             {loaded && menu == "toManage" && <div className={styles["documents-to-manage"]}>
                 <p className={"text-white text-bold-20 " + styles['sub-title']}>Documents to manage</p>
-                <DocumentList documents={documentToManageList} credentials={credentials}></DocumentList>
+                <DocumentList></DocumentList>
             </div>}
             {(menu == 'conflict' || menu == 'duplicate') && loaded &&
                 <div className={styles["related-documents"]} key={menu}>
                     <p className={"text-white text-bold-20 " + styles['sub-title']}>{menu == 'conflict' ? "Conflict information" : "Duplicate information"}</p>
                     <div>
                         {documentToShow.map((file: any, index: number) => {
-                            return <DocumentCard document={file} credentials={credentials} type={menu}
+                            return <DocumentCard document={file} type={menu}
                                                  key={file.subject + '_' + file.status + '_' + index}></DocumentCard>
                         })}
                     </div>

@@ -1,148 +1,164 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
-import styles from "../styles/DocumentList.module.scss";
-import ModalTemplate from "./ModalTemplate";
-import { KaiStudio } from "sdk-js";
-import DocumentCard from "./DocumentCard";
-import Image from "next/image";
-import downloadIcon from "kai-asset/download.svg"
+import { useState } from 'react';
+import { Buffer } from 'buffer';
+import { useAnomalyStore } from '@/store/anomalyStore';
+import DocumentCard from '@/app/components/DocumentCard';
+import ModalTemplate from '@/app/components/ModalTemplate';
+import { Document, Anomaly } from '@/types';
+import Image from 'next/image';
+import share from 'kai-asset/share.svg';
+import ModalStyles from './../styles/ModalTemplate.module.scss'
+import DocumentListStyles from './../styles/DocumentList.module.scss'
 
-interface Anomalies {
-    conflicts: any[];
-    duplicated: any[];
+interface AnomaliesByType {
+    [key: string]: Anomaly[];
 }
 
-export function DocumentList({ credentials, documents }) {
-    const [sdk, setSdk] = useState<any>(null);
-    const [orderType, setOrderType] = useState("count_conflicts");
-    const [orderDirection, setOrderDirection] = useState("asc");
+type OrderField = 'name' | 'count_conflicts' | 'count_duplicates';
+type AnomalyType = 'conflict' | 'duplicate';
+
+export default function DocumentList() {
+    const [orderType, setOrderType] = useState<OrderField>('count_conflicts');
+    const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('asc');
     const [showModal, setShowModal] = useState(false);
-    const [modalFileId, setModalFileId] = useState("");
-    const [anomalies, setAnomalies] = useState<any>({});
+    const [modalFileId, setModalFileId] = useState('');
+    const [anomalies, setAnomalies] = useState<AnomaliesByType>({});
+    const { documentsToManageList, sdk } = useAnomalyStore();
 
-    useEffect(() => {
-        if (credentials.organizationId && credentials.instanceId && credentials.apiKey) {
-            setSdk(
-                new KaiStudio({
-                    organizationId: credentials.organizationId,
-                    instanceId: credentials.instanceId,
-                    apiKey: credentials.apiKey,
-                })
-            );
-        } else if (credentials.host && credentials.apiKey) {
-            setSdk(
-                new KaiStudio({
-                    host: credentials.host,
-                    apiKey: credentials.apiKey,
-                })
-            );
-        }
-        orderBy("count_conflicts");
-    }, [credentials]);
-
-    async function goTo(file: any) {
-        if (file.url?.includes("/api/orchestrator/files/download")) {
-            if (!sdk) return;
-
-            const result = await sdk.fileInstance().downloadFile(file.name);
-
-            if (result && result.data) {
-                const buffer = Buffer.from(result);
-                const blob = new Blob([buffer]);
-                const url = window.URL.createObjectURL(blob);
-                let a = document.createElement("a");
-                document.body.appendChild(a);
-                a.style.display = "none";
-                a.href = url;
-                a.download = file.name;
-                a.click();
-                window.URL.revokeObjectURL(url);
-            }
-        } else {
-            window.open(file.url, "_blank");
-        }
-    }
-
-    async function showFileAnomalies(file: any) {
-        if (!sdk) return;
-
-        const result = await sdk.auditInstance().getAnomaliesForDoc(file.id);
-        setAnomalies(result);
-        setModalFileId(file.id);
-        setShowModal(true);
-    }
-
-    function closeModal() {
-        setShowModal(false);
-        setAnomalies({});
-        setModalFileId("");
-    }
-
-    function orderBy(type: string) {
-        let newOrderDirection = orderType !== type ? "desc" : orderDirection === "asc" ? "desc" : "asc";
+    const orderBy = (type: OrderField) => {
+        const newOrderDirection = orderType !== type ? 'desc' : orderDirection === 'asc' ? 'desc' : 'asc';
         setOrderType(type);
         setOrderDirection(newOrderDirection);
 
-        documents.sort((a: any, b: any) => {
-            return newOrderDirection === "asc" ? a[type] - b[type] : b[type] - a[type];
+        // Sort the documents list
+        documentsToManageList.sort((a: Document, b: Document) => {
+            const aValue = type === 'name' ? a[type] || '' : a[type] || 0;
+            const bValue = type === 'name' ? b[type] || '' : b[type] || 0;
+            if (type === 'name') {
+                return newOrderDirection === 'asc' ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue));
+            }
+            return newOrderDirection === 'asc' ? Number(aValue) - Number(bValue) : Number(bValue) - Number(aValue);
         });
-    }
+    };
+
+    const showFileAnomalies = async (file: Document) => {
+        if (!sdk || !file.id) return;
+        try {
+            const result = await sdk.auditInstance().getAnomaliesForDoc(file.id);
+            setAnomalies(result);
+            setModalFileId(file.id);
+            setShowModal(true);
+        } catch (error) {
+            console.error('Error fetching file anomalies:', error);
+        }
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setAnomalies({});
+        setModalFileId('');
+    };
+
+    const goTo = async (file: Document) => {
+        if (!file.name) return;
+
+        if (file.url?.includes('/api/orchestrator/files/download')) {
+            if (!sdk) return;
+
+            try {
+                const result = await sdk.fileInstance().downloadFile(file.name);
+                if (result) {
+                    let fileContent: string;
+                    if (Array.isArray(result)) {
+                        fileContent = result.join('');
+                    } else if (typeof result === 'string') {
+                        fileContent = result;
+                    } else {
+                        fileContent = String(result);
+                    }
+
+                    const buffer = Buffer.from(fileContent);
+                    const blob = new Blob([buffer]);
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    document.body.appendChild(a);
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = file.name;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }
+            } catch (error) {
+                console.error('Error downloading file:', error);
+            }
+        } else if (file.url) {
+            window.open(file.url, '_blank');
+        }
+    };
+
+    const getAnomalyType = (type: string): AnomalyType => {
+        const lowercaseType = type.toLowerCase();
+        return lowercaseType === 'conflict' || lowercaseType === 'duplicate' ? (lowercaseType as AnomalyType) : 'conflict';
+    };
 
     return (
-        <div className={styles["document-list"]}>
-            <table className={styles["files"]}>
+        <div className={DocumentListStyles['document-list']}>
+            <table className={DocumentListStyles['table']}>
                 <thead>
                     <tr>
-                        <th className="text-white text-regular-14">Name</th>
-                        <th className="text-white text-regular-14" onClick={() => orderBy("count_conflicts")}>
-                            Conflicts number
+                        <th className={DocumentListStyles['th']}>
+                            <p className='text-white text-medium-14' onClick={() => orderBy('name')}>
+                                Name
+                                {orderType === 'name' && <span>{orderDirection === 'asc' ? ' ▲' : ' ▼'}</span>}
+                            </p>
                         </th>
-                        <th className="text-white text-regular-14" onClick={() => orderBy("count_duplicates")}>
-                            Duplicates number
+                        <th>
+                            <p className='text-white text-medium-14'  onClick={() => orderBy('count_conflicts')}>
+                                Conflicts
+                                {orderType === 'count_conflicts' && <span>{orderDirection === 'asc' ? ' ▲' : ' ▼'}</span>}
+                            </p>
+                        </th>
+                        <th>
+                            <p className='text-white text-medium-14'  onClick={() => orderBy('count_duplicates')}>
+                                Duplicates
+                                {orderType === 'count_duplicates' && <span>{orderDirection === 'asc' ? ' ▲' : ' ▼'}</span>}
+                            </p>
                         </th>
                     </tr>
                 </thead>
                 <tbody>
-                    {documents.map((document: any) => (
-                        <tr key={document.id}>
-                            <td width="576" className={styles["name-td"]}>
-                                <p className="text-white text-regular-14" onClick={() => showFileAnomalies(document)}>
-                                    {document.name}
+                    {documentsToManageList.map((doc: Document, index: number) => (
+                        <tr key={index}>
+                            <td className="document-title">
+                                <p className="text-white text-regular-14" onClick={() => showFileAnomalies(doc)}>
+                                    {doc.name}
                                 </p>
                             </td>
-                            <td width="300">
-                                <p className="text-white text-regular-14">{document.count_conflicts}</p>
-                            </td>
-                            <td width="300">
-                                <p className="text-white text-regular-14">{document.count_duplicates}</p>
-                            </td>
-                            <td width="50" className={styles["download"]}>
-                                <Image src={downloadIcon} onClick={() => goTo(document)} alt="download"/>
+                            <td className="text-white text-regular-14">{doc.count_conflicts}</td>
+                            <td className="text-white text-regular-14">{doc.count_duplicates}</td>
+                            <td >
+                                <Image src={share} alt="Share" width={24} height={24} onClick={() => goTo(doc)} />
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
             {showModal && (
-                <ModalTemplate onClose={closeModal} >
-                    {anomalies.conflicts?.length > 0 && (
-                        <div>
-                            <p className={`text-white text-bold-16 ${styles["title"]}`}>Document Conflicts</p>
-                            {anomalies.conflicts.map((document: any) => (
-                                <DocumentCard  document={document} key={document.id} credentials={credentials} type="conflict"/>
-                            ))}
-                        </div>
-                    )}
-                    {anomalies.duplicated?.length > 0 && (
-                        <div>
-                            <p className={`text-white text-bold-16 ${styles["title"]}`}>Document Duplicates</p>
-                            {anomalies.duplicated.map((document: any) => (
-                                <DocumentCard key={document.id} document={document} credentials={credentials} type="duplicate"/>
-                            ))}
-                        </div>
-                    )}
-                </ModalTemplate>
-                    
+                <div className={ModalStyles['modal-container']}>
+                    <div className={ModalStyles['modal-bg']} onClick={closeModal}>
+                    </div>
+
+                    <ModalTemplate isOpen={showModal} onClose={closeModal} title={`Anomalies for document ${modalFileId}`}>
+                        {Object.entries(anomalies).map(([type, items]: [string, Anomaly[]], index) => (
+                            <div key={index}>
+                                <p className="text-white text-medium-16 mb-3">{type}</p>
+                                {items.map((item: Anomaly, itemIndex: number) => (
+                                    <DocumentCard key={itemIndex} document={item} type={getAnomalyType(type)} />
+                                ))}
+                            </div>
+                        ))}
+                    </ModalTemplate>
+                </div>
             )}
         </div>
     );

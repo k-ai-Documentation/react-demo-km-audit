@@ -12,17 +12,18 @@ interface DropdownSelectProps {
 const DropdownSelect: React.FC<DropdownSelectProps> = ({ selected, options, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const [newSelected, setNewSelected] = useState(selected);
   return (
-    <div className={`${styles["dropdown-select"]} ${isOpen ? styles["open"] : ""}`} onMouseLeave={() => setIsOpen(false)}>
+    <div className={`${styles["dropdown-select"]} ${isOpen ? styles["open"] : ""}`}>
       <div className={styles["trigger"]} onClick={() => setIsOpen(!isOpen)}>
-        <p className="text-white text-medium-14">{selected}</p>
+        <p className="text-white text-medium-14">{newSelected}</p>
         <Image src={expend} alt="expend" width={24} height={24} />
       </div>
       {isOpen && (
         <div className={styles["body"]}>
           {options.map((option) =>
-            option !== selected ? (
-              <div key={option} className={styles["select-box"]} onClick={() => onChange(option)}>
+            option !== newSelected ? (
+              <div key={option} className={styles["select-box"]} onClick={() => {onChange(option); setIsOpen(false); setNewSelected(option)}}>
                 <p className="text-white text-medium-14">{option}</p>
               </div>
             ) : null

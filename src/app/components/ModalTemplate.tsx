@@ -1,24 +1,25 @@
-import React from 'react';
-import styles from '../styles/ModalTemplate.module.scss';
+'use client';
+import { ReactNode } from 'react';
 import Image from 'next/image';
-import closeImg from 'kai-asset/icons/close-small.svg';
+import closeIcon from 'kai-asset/icons/close-small.svg';
+import modalStyles from './../styles/ModalTemplate.module.scss'
+
 interface ModalTemplateProps {
+    isOpen: boolean;
     onClose: () => void;
-    children: React.ReactNode;
+    title: string;
+    children: ReactNode;
 }
 
-const ModalTemplate: React.FC<ModalTemplateProps> = ({ onClose, children }) => {
+export default function ModalTemplate({ isOpen, onClose, title, children }: ModalTemplateProps) {
+    if (!isOpen) return null;
+
     return (
-        <div className={styles['modal-container']}>
-            <div className={styles['modal-bg']} onClick={onClose} />
-            <div className={styles['modal']}>
-                <div className={styles['close-button']} >
-                    <Image src={closeImg} onClick={onClose} alt="Close button" width={24} height={24} />
-                </div>
-                <div className={styles['modal-body']}>{children}</div>
+        <div className={modalStyles['modal']}>
+            <div className={modalStyles["close-button"]}>
+                <Image onClick={onClose} src={closeIcon} alt="Close" width={24} height={24} />
             </div>
+            <div className={modalStyles["modal-body"]}>{children}</div>
         </div>
     );
-};
-
-export default ModalTemplate;
+}

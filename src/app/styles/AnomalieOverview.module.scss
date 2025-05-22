@@ -1,0 +1,23 @@
+.anomalies {
+    width: 100%;
+    .table {
+        width: 60%;
+    }
+    .tbody {
+        .tr {
+            border-bottom: 1px solid var(--color-border);
+
+            .td {
+                height: 60px;
+                vertical-align: middle;
+                text-align: center;
+                .subject{
+                    cursor: pointer;
+                    &:hover{
+                        color: var(--primary-color);
+                    }
+                }
+            }
+        }
+    }
+}

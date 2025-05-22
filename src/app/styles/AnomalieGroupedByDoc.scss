@@ -1,0 +1,106 @@
+.anomalie-grouped-by-doc {
+    width: 100%;
+    .filter-group {
+        position: relative;
+        width: 50%;
+        margin-bottom: 10px;
+        
+        input {
+            width: 100%;
+            border-bottom: 1px solid var(--grey-color);
+            border-bottom-left-radius: 0px;
+            border-bottom-right-radius: 0px;
+        }
+
+        .search-item-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: var(--grey-color);
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            z-index: 1000;
+            box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
+            p {
+                padding: 8px 12px;
+                cursor: pointer;
+
+                &:hover {
+                    background-color: var(--grey-4-color);
+                }
+            }
+        }
+    }
+    .doc-box {
+        border-radius: 10px;
+        border: 2px solid var(--color-border);
+        padding: 10px;
+        margin-bottom: 20px;
+        background-color: var(--light-black-color);
+        overflow: visible;
+        .open-doc {
+            line-height: 1.6;
+            cursor: pointer;
+            &:hover {
+                color: var(--primary-color);
+            }
+        }
+        .anomalies-table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+            th {
+                height: 50px;
+                text-align: center;
+                vertical-align: middle;
+                background-color: var(--grey-4-color);
+                font-weight: bold;
+                &:first-child {
+                    border-top-left-radius: 10px;
+                }
+                &:last-child {
+                    border-top-right-radius: 10px;
+                }
+            }
+
+            td {
+                text-align: center;
+                padding: 10px;
+                background-color: var(--light-black-color);
+                border-bottom: 1px solid var(--color-border);
+                &.id {
+                    width: 5%;
+                }
+                &.subject {
+                    width: 10%;
+                }
+                &.state {
+                    width: 104px;
+                    .trigger {
+                        padding: 7px 0px 0px 14px;
+                        width: 80px;
+                    }
+                    .select-box {
+                        width: 104px;
+                        margin-bottom: 7px;
+                        p {
+                            &:hover {
+                                color: var(--primary-color);
+                            }
+                        }
+                        &:first-child {
+                            margin-top: 7px;
+                        }
+                        &:last-child {
+                            margin-bottom: 0;
+                        }
+                    }
+                }
+                &.info {
+                    width: 25%;
+                }
+            }
+        }
+    }
+}
